@@ -1,0 +1,4 @@
+use('telegrom')
+
+db.messages.findById({ _id: ObjectId("6497cbf06e23f7b27191cf73") });
+
