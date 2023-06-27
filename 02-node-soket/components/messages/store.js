@@ -10,8 +10,14 @@ const getMessage = async (user) => {
   if (user) {
     filter = { user: user };
   }
-  const messages = await Model.find(filter);
-  return messages;
+  try {
+    const messages = await Model.find(filter)
+      .populate("user") // popula la data de user para que se muestre
+      .exec();
+    return messages;
+  } catch (error) {
+    throw new Error(error);
+  }
 };
 
 const updateMessage = async (id, message) => {
