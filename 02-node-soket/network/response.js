@@ -1,15 +1,15 @@
-const success = (req, res, message, status, messageLog) => {
+const success = (req, res, data, status, messageLog) => {
   console.log('[estados de la peticion] ==>', messageLog);
   res.status(status || 200).send({
     error: "",
-    message,
+    data,
   });
 };
 
-const error = (req, res, message, status, details) => {
+const error = (req, res, data, status, details) => {
   console.error('[causa de error]', details);
   res.status(status || 500).send({
-    message: message,
+    data: data,
     body: "",
   });
 };

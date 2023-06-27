@@ -10,7 +10,7 @@ function connect(uri) {
       dbName: "telegrom",
     })
       .then(() => resolve(), console.log("conectado"))
-      .catch(() => reject(), console.log("no conectado"));
+      .catch(() => reject());
   });
 }
 

@@ -13,8 +13,14 @@ router.get("/", (req, res) => {
       response.success(req, res, messageList, 200, "listade mensajes enviada");
     })
     .catch((e) => {
-      console.error(e);
-      response.error("Unexpected error");
+      console.log("Algo pasó con mongo");
+      response.error(
+        req,
+        res,
+        "Unexpected error",
+        500,
+        `Error al actualizar el mensaje ${e}`
+      );
     });
 });
 
