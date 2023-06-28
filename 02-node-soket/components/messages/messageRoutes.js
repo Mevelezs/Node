@@ -1,9 +1,13 @@
 const express = require("express");
 const response = require("../../network/response");
 const controllers = require("./controllers");
-
+const multer = require("multer"); // para subir documentos a node
 const router = express.Router();
 
+
+const upload = multer({
+  dest: "./public/files/",
+});
 router.get("/", (req, res) => {
   const { user } = req.query;
 
@@ -24,8 +28,10 @@ router.get("/", (req, res) => {
     });
 });
 
-router.post("/", (req, res) => {
-  const { user, message } = req.body;
+router.post("/", upload.single("files"), (req, res) => {
+  // el post para que funcione el multer-upload se tiene que hacer en forma MULTIPART( en thuder-client --> form --> files, en RapidApi --> form url-encode --> multipart)
+
+  const { user, message, chat } = req.body;
   if (!user || !message) {
     response.error(
       req,
@@ -37,7 +43,7 @@ router.post("/", (req, res) => {
     throw new Error("El tonto no mandó los parámetros");
   }
   controllers
-    .addMesages(user, message)
+    .addMesages(user, message, chat, req.file)
     .then(() => {
       response.success(req, res, "Hola todo salió bien!");
     })

@@ -1,0 +1,16 @@
+<head>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+</head>
+<body>
+ <!-- TODO ==> hacer que funcione el front -->
+   <h1>Mira la consola</h1>
+
+   <script>
+     const socket = io.connect("http://localhost:3000")
+     socket.on('message', (data) => console.log(data))
+   </script>
+
+</body>
+</html>

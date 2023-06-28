@@ -2,15 +2,20 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const routes = require("./network/routes");
 const { connect } = require("./db");
-require('dotenv').config()
+require("dotenv").config();
+const socket = require("./socket");
+
+const app = express();
+const server = require("http").Server(app);
+
+socket.connect(server);
 
 //uri = "mongodb+srv://mauricio:admin123@platzi2.sssc1mq.mongodb.net/";
 
-const uri = process.env.URI
-
+const uri = process.env.URI;
 connect(uri);
-const app = express();
+
 app.use(bodyParser.json());
 routes(app);
-
-app.listen(3000, console.log("listen to port 3000"));
+app.use('/app' , express.static('public'))
+server.listen(3000, console.log("listen to port 3000"));
