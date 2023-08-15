@@ -28,7 +28,10 @@ io.on('connection', (socket) => {
   
   socket.on('message', (message) => { // recibe el mensaje del cliente (submit)
     console.log(message);
-    socket.broadcast.emit('message', message) // reenvia el mensaje a los otros clientes
+    socket.broadcast.emit('message', {
+      body: message,
+      from: socket.id
+    }) // reenvia el mensaje a los otros clientes
   })
 })
 
