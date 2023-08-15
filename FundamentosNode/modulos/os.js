@@ -1,7 +1,5 @@
 
-const os = require('os'); // Es el sistema operativo
-
-
+const os = require('node:os'); // Es el sistema operativo
 console.log(os.arch())// bites del sistema;
 console.log(os.platform()) // nombre sel sistema;
 console.log(os.cpus()) // nucleos de la  cpu;

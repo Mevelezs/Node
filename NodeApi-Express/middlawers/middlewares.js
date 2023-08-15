@@ -1,4 +1,4 @@
-const boom = require('@hapi/boom');
+
 const { ValidationError } = require('sequelize')
 function error(err, req, res, next){
   console.error(err);
