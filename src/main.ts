@@ -1,5 +1,5 @@
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
@@ -10,8 +10,13 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true, //quita o ignora los elemntos que no esten definidos en el dto
       forbidNonWhitelisted: true, // Alerta sobre el dato extra en el dto y deniega la petición
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   ); // activa los validadores (DTOs) globalmente
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const config = new DocumentBuilder()
     .setTitle('API')

@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { CreateBrandDto, UpdateBrandDto } from '../dtos/brand.dto';
 import { BrandsService } from '../services/brands.service';
 
@@ -18,7 +26,7 @@ export class BrandsController {
 
   @Post()
   createBrand(@Body() payload: CreateBrandDto) {
-    return this.brandService.create(payload)
+    return this.brandService.create(payload);
   }
 
   @Put(':id')
@@ -28,6 +36,6 @@ export class BrandsController {
 
   @Delete(':id')
   deleteBrand(@Param('id') id: number) {
-     return this.brandService.delete(id);
-   }
+    return this.brandService.delete(id);
+  }
 }

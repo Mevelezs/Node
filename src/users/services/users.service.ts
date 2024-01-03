@@ -15,7 +15,7 @@ export class UsersService {
   ) {}
 
   findAll() {
-    return this.userRepo.find({ relations: ['customer']});
+    return this.userRepo.find({ relations: ['customer'] });
   }
 
   async findOne(id: number) {
@@ -28,6 +28,7 @@ export class UsersService {
 
   async create(data: CreateUserDto) {
     const newUser = this.userRepo.create(data);
+
     if (data.customerId) {
       const customer = await this.customerService.findOne(data.customerId);
       newUser.customer = customer;
@@ -38,7 +39,6 @@ export class UsersService {
   async update(id: number, changes: UpdateUserDto) {
     const userUpdated = await this.findOne(id);
     this.userRepo.merge(userUpdated, changes);
-
     return this.userRepo.save(userUpdated);
   }
 

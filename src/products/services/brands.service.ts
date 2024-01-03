@@ -24,7 +24,17 @@ export class BrandsService {
     return brand;
   }
 
-  create(data: CreateBrandDto) {
+  async findbyName(name: string) {
+    const brand = await this.repoBrands.findOne({
+      where: { name },
+    });
+    return brand;
+  }
+
+  async create(data: CreateBrandDto) {
+    const brand = await this.findbyName(data.name);
+    if (brand) throw new NotFoundException('La marca ya existe');
+
     const newBrand = this.repoBrands.create(data);
     this.repoBrands.save(newBrand);
 
