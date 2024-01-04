@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  nestjs_mongo:
+    container_name: nestjs_mongo
+    image: mongo:5.0
+    environment:
+       MONGO_INITDB_DATABASE: nestjs_mongo
+       MONGO_INITDB_ROOT_USERNAME: admin
+       MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo_data:/data/db

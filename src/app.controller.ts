@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -10,13 +10,13 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('nuevo')
-  newEndpoint() {
-    return 'yo soy nuevo';
+  @Get('/tasks')
+  getTasks() {
+    return this.appService.getTasks();
   }
 
-  @Get('/ruta/')
-  hello() {
-    return 'con /sas/';
+  @Post('/tasks')
+  createTasks(@Body() data) {
+    return this.appService.createTasks(data);
   }
 }

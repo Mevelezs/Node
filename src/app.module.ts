@@ -1,14 +1,16 @@
-import { Module, HttpModule, HttpService } from '@nestjs/common';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
+import { lastValueFrom } from 'rxjs';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
+import config from './config';
 import { DatabaseModule } from './database/database.module';
 import { enviroments } from './enviroments';
-import config from './config';
+import { ProductsModule } from './products/products.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -33,9 +35,8 @@ import config from './config';
     {
       provide: 'TASKS',
       useFactory: async (http: HttpService) => {
-        const tasks = await http
-          .get('https://jsonplaceholder.typicode.com/todos')
-          .toPromise();
+        const request = http.get('https://jsonplaceholder.typicode.com/todos');
+        const tasks = await lastValueFrom(request);
         return tasks.data;
       },
       inject: [HttpService],
