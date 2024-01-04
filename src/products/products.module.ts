@@ -10,10 +10,14 @@ import { BrandsController } from './controllers/brands.controller';
 
 import { CategoriesService } from './services/categories.service';
 import { CategoriesController } from './controllers/categories.controller';
+import { Brand, BrandSchema } from './entities/brand.entity';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+    MongooseModule.forFeature([
+      { name: Product.name, schema: ProductSchema },
+      { name: Brand.name, schema: BrandSchema },
+    ]),
   ],
   controllers: [ProductsController, CategoriesController, BrandsController],
   providers: [ProductsService, BrandsService, CategoriesService],

@@ -109,3 +109,46 @@ https://docs.nestjs.com/techniques/mongodb
   import { isMongoId } from 'class-validator';
 
   ```
+
+## ------> Filtros e Indexadores <------------
+1. Los filtero se tipan desde el dto de la entidad con una clase aparte
+
+2. Se le pone los campos requeridos como opcionales
+
+3. Casi siempre para estos métodos de filtrado las condiciones del filtro vienen por query,
+hay que requerirlos en el controller con `@Quety()` y tiparlo y pasarlos al método
+
+4. Támbien hay que pasarlos al servicio (estos flujo por le regular es de atrás para adelante), tiparlos y empezar con las condicioneles por si viene o no.
+
+5. Siempre que un dato viene por query es un string, se necesita hacer un parceo global para estos datos => desde el main en el validador global ==> 
+app.useGlobalPipes (
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      ``transformOptions: {``
+       `` enableImplicitConversion: true,``
+    ``  },``
+    })
+
+6. Para indexsar un campo solo se requiere que en su Schema en la parte del decorador @Prop asignemos la indxación `@Prop({type: number, index : true})`
+
+7. Se puede crear una indexacion compuesta para que resporda con dos o más campos a la vez, para esto fuara de la tabla ponemos `NombreSchema.index({atributo: 1, atributo: -1})` el 1 y -1 en el atributo indica si se organiza la información de forma ascendente o descendente
+https://www.mongodb.com/docs/manual/indexes/
+
+# -----> Relaciones uno a uno embebidas <-----
+1. La relación es entre dos documentos de mongodb, pero no hay referencia a al otro documento
+2. No se puede hacer consultas ni buscar por ella, solo puedes acceder
+3. Para crearla hacemos lo siguiente ==> vamos a usa como ejemplo los Products y Categories => importamos raw de nestjs/mongooose en la tabla te products => Creamoc un nuevo atributo en esta tabla y lo tipamos, agregamos el decorador Prop y dentro le pasamos el raw con laos atributos de la categoría 
+```sh
+ @Prop(
+    raw({
+      name: { type: String },
+      image: { type: String },
+    }),
+  )
+  category: Record<string, any>;
+```
+==> en el dto le decimos que necesitamo una nueva category => importamos el categoryDto ==> agregamos el tributo el el dto y lo tipamos con el dto de la categoria => usamos el decorador ValidateNested para que valide en cascada. (la categoría solo se crea para ese producto, pero como es un db noSQL la repeticio de datos no es mala)
+
+# ---> Relaciones uno a uno referenciadas <---
+
