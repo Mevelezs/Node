@@ -313,23 +313,174 @@ Utiliza el decorador ``@IsArray()`` para validar que efectivamente se trate de u
 Realizar un “Join” o, como se lo conoce en MongoDB, un “Populate” es muy sencillo. Basta con agregar la configuración después del método de búsqueda indicando el nombre de la propiedad a popular.
 
 ```sh
-// users/orders.service.ts
+  // users/orders.service.ts
 
-export class OrdersService {
+  export class OrdersService {
 
-  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+    constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
 
-  findAll() {
-    return this.orderModel
-      .find()
-      .populate('products')
-      .exec();
+    findAll() {
+      return this.orderModel
+        .find()
+        .populate('products')
+        .exec();
+    }
   }
-}
 ```
 Mongoose sabrá a qué colección ir a buscar los documentos al estar referenciado y tipado desde el esquema.
 
 De esta manera, tu base de datos está lista para manipular grandes volúmenes de datos con los mejores tipos de relaciones que existen. Utiliza el tipo de relación más apropiado para cada escenario.
 
 # ----> Manipulación de arrays en MongoDB <----
-1.
+1. Los esquemas que contienen propiedades tipo Array deben manipularse de una forma especial. Haciendo los típicos push/pullpara agregar/quitar elementos, pero considerando la asincronía y que estos arrays se guardan en una base de datos.
+
+Agregar y quitar elementos en un array
+Veamos cómo es posible agregar/quitar elementos de un array que forma parte de un documento en MongoDB:
+
+# -----> Operadores especiales de MongoDB <----
+Si trabajas directamente con MongoDB, tienes que conocer los operadores que implementa para la manipulación de arrays. Estos son:
+
+``$addToSet`` para agregar items en un array
+``$pull para`` eliminar items en un array
+``$pullAll`` para eliminar todos los items en un array
+De esta manera, tu mismo puedes crear las consultas a tu base de datos necesarias para manipular un array dentro de un documento, sin necesidad de que herramientas como Mongoose implementen una capa de abstracción que facilite la tarea.
+
+
+# -----> Auntentificación y validación <-------
+
+# ---------> Introducción a Guards <-----------
+1. Validan y dan autorización en los endpoints dependiendo de los atributos que triga la petició y las condicioneles que se les haya puesto dentro
+
+==> Creamos un modulo nuevo para estos `nest g mo auth` (CLI)
+==> Creamos el primer guardian `ǹest g gu auth/guards/apiKey --flat`
+
+==> importamos el guardian en el controlador que queremos protejer y lo poneon encima de la ruta con el decorador `@UseGuard(NombreGuardian)` 
+
+==> Ejemplo de ejecición estatica y directa en el app <==
+
+2. Pasos para hacer la validación de forma programática
+
+==> Pasamos el `@UseGuard(NombreGuardian)` para la cabeza del controlador
+
+==> importamos `SetMetadata`, le pasamos la condicion para que sea público y se lo colocamos a las rutas que requerimos exponer 
+```sh
+@UseGuards(ApiKeyGuard)
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  @SetMetadata('isPublic', true)
+  getHello(): string {
+    return this.appService.getHello();
+  }
+  ...
+}
+```
+
+==> Para que funcione tenemos que => capturar la metadata en el guardian con Reflector => leerla y retornar true;
+
+==> Para no rener el `@SetMetadata('isPublic', true)` en los endpoins, creamos nuestro propio decorador para que sea más comodo.
+  => Creamos una carpeta nuava => creamos el documento que va atener el decoredor  => imprtamos `ßetadata` => 
+  ```sh
+   import { SetMetadata } from '@nestjs/common';
+   export const IS_PUBLIC_KEY = 'isPublic';
+   export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+  ```
+  => importamos en el controler y lo usamos como `@Public()`
+
+==> Para no tener la apyKey quemada en el guardian, la pasamos a variables de entrono, así hay dos ventajas; 1. mejoramos la seguridad, 2. podemos cambiar la key de forma dinamica dependiendo el entorno en el que estemos desarrollando (staying, dev o prod)
+ 
+  => importamos nuestro config => lo tipamos con ConfigTypes => inyectamos en el constructor => camniamos la variable quemada
+ ```sh
+  No olvidar que para el cambio de entorno de ejecucion => NODE_ENV=prod npm run start:dev
+ ```
+
+# ----> Hashing de contraseñas en MongoDB <----
+1. Instalamos el paquete `npm i bcrypt`.
+2. instalamos los tipos
+3. importamos en el servicio => en el endpoind que guarda el password le aplicamos el hashing => `const hasPassword = await bcypt.has(user.password, 10)` => asignamos al password antes de salvar
+4. Excluimos el dato de los valores retornados
+  => instalamos `npm i nestjs-mongoose-exclude` => en su Entity utilizar el decorador `@ExcludeProperty()` sobr el atributo => utilizar un Interceptor a nivel de ruta o del controlador completo.
+
+  ```sh
+   @ExcludeProperty()
+   password: string;
+  ```
+  ```sh
+  @UseInterceptors(
+    new SanitizeMongooseModelInterceptor({
+      excludeMongooseId: false, ==> para el _id (el de la base de datos)
+      excludeMongooseV: true, ==> para la version
+      }),
+    )
+  @Controller('users')
+  ```
+ => Otra forma (mejor) => en el Entity
+  @Prop({ required: true, `select: false` })
+  password: string;  => asi nigun método podrá traerlo
+
+# ------> Autenticación con Passport.js <------ 
+https://docs.nestjs.com/security/authentication  <!-- Hacer la demo de la doc -->
+
+1. Instalamos passport ` npm install --save @nestjs/passport passport passport-local`
+2. Instalamos los tipos `npm install --save-dev @types/passport-local`
+3. Creamos un servicio de autenticacion => `nest g s auth/services/auth --flat`,
+4. Importamos el servicio a que recibe la data a validar (en este caso el UserService) tanto en el servicio que acabamos de crear, en el provider se importa el `UserModule` (recordar que si no está en el provider no funciona)
+5. Creamos el método de validación en el auth.service => en el metodo => traemos el usuario por el emai => desencriptamos y validamos el password => retornamos si es valido o no
+```sh
+  async validateUser(email: string, password: string) {
+    const user = await this.userService.findByEmail(email);
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (user && isMatch) {
+      return user;
+    }
+    return null;
+  }
+```
+6. Creamos la estrategia => `nest g s auth/strategies/local.strategy --flat` => importamos PassprotStrategy => extendemos nuestra estrategia del anterior => le decimo cual es nuestra estrategia; para eso importamos la Strategy de passport-local y se la pasamos al PassportStrategy. => Inyectamos el AuthService en el constructor => llamamos al super => cramos el método que valide el usuario => retornamos el resultado
+```sh 
+ @Injectable()
+  export class LocalStrategyService extends PassportStrategy(Strategy, 'local') {
+    constructor(private authService: AuthService) {
+      super();
+    }
+
+    async validate(email: string, password: string) {
+      const user = await this.authService.validateUser(email, password);
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      return user;
+    }
+ 
+```
+ `Por defecto el primer parametro se llama username, no importa si lo llamamos email aquí, cuando hagamos la petición tiene que ser con username (mas adelante lo customizamos)`
+7. Importar en el provider (auth.module) PassportModule
+
+8. Crear la ruta para provar la validación => creamos el controller `nest g co auth/controllers/auth --flat` => creamos el metodo que recibe los datos => usamos los guards para validar con la estrategia 
+
+```sh
+@Controller('auth')
+export class AuthController {
+  
+  @UseGuards(AuthGuard('local'))
+  @Post()
+  login(@Req() req: Request) {
+    return req.user;
+  }
+}
+```
+9. Cambiando el nombre de los atributos => en el supr de la clase que llama al validate renombramos las variables que vienen pro defecto
+```sh
+ export class LocalStrategyService extends PassportStrategy(Strategy, 'local') {
+    constructor(private authService: AuthService) {
+      super({
+        usernameField: 'email', // por defecto es 'username'
+        passwordField : 'password'
+      });
+    }
+   ...
+```
+NOTA ( le select : false en el user entity impide las validaciones )

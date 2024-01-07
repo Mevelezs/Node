@@ -1,26 +1,34 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
-  Body,
   Put,
-  Delete,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SanitizeMongooseModelInterceptor } from 'nestjs-mongoose-exclude';
 
-import { UsersService } from '../services/users.service';
 import { CreateUserDto, UpdateUserDto } from '../dtos/user.dto';
+import { UsersService } from '../services/users.service';
 
 @ApiTags('users')
+@UseInterceptors(
+  new SanitizeMongooseModelInterceptor({
+    excludeMongooseId: false,
+    excludeMongooseV: true,
+  }),
+)
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Get()
   @ApiOperation({
     summary: 'List of users',
   })
+  @Get()
   findAll() {
     return this.usersService.findAll();
   }
@@ -41,8 +49,8 @@ export class UsersController {
   }
 
   @Post()
-  create(@Body() payload: CreateUserDto) {
-    return this.usersService.create(payload);
+  createUser(@Body() payload: CreateUserDto) {
+    return this.usersService.createUser(payload);
   }
 
   @Put(':id')
