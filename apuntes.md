@@ -430,3 +430,148 @@ export class AModule{}
 ```
 -
 ---------------------------------------------------------
+
+# -----> Auntentificación y validación <-------
+
+# ---------> Introducción a Guards <-----------
+1. Validan y dan autorización en los endpoints dependiendo de los atributos que triga la petició y las condicioneles que se les haya puesto dentro
+
+==> Creamos un modulo nuevo para estos `nest g mo auth` (CLI)
+==> Creamos el primer guardian `ǹest g gu auth/guards/apiKey --flat`
+
+==> importamos el guardian en el controlador que queremos protejer y lo poneon encima de la ruta con el decorador `@UseGuard(NombreGuardian)` 
+
+==> Ejemplo de ejecición estatica y directa en el app <==
+
+2. Pasos para hacer la validación de forma programática
+
+==> Pasamos el `@UseGuard(NombreGuardian)` para la cabeza del controlador
+
+==> importamos `SetMetadata`, le pasamos la condicion para que sea público y se lo colocamos a las rutas que requerimos exponer 
+```sh
+@UseGuards(ApiKeyGuard)
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  @SetMetadata('isPublic', true)
+  getHello(): string {
+    return this.appService.getHello();
+  }
+  ...
+}
+```
+
+==> Para que funcione tenemos que => capturar la metadata en el guardian con Reflector => leerla y retornar true;
+
+==> Para no rener el `@SetMetadata('isPublic', true)` en los endpoins, creamos nuestro propio decorador para que sea más comodo.
+  => Creamos una carpeta nuava => creamos el documento que va atener el decoredor  => imprtamos `ßetadata` => 
+  ```sh
+   import { SetMetadata } from '@nestjs/common';
+   export const IS_PUBLIC_KEY = 'isPublic';
+   export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+  ```
+  => importamos en el controler y lo usamos como `@Public()`
+
+==> Para no tener la apyKey quemada en el guardian, la pasamos a variables de entrono, así hay dos ventajas; 1. mejoramos la seguridad, 2. podemos cambiar la key de forma dinamica dependiendo el entorno en el que estemos desarrollando (staying, dev o prod)
+ 
+  => importamos nuestro config => lo tipamos con ConfigTypes => inyectamos en el constructor => camniamos la variable quemada
+ ```sh
+  No olvidar que para el cambio de entorno de ejecucion => NODE_ENV=prod npm run start:dev
+ ```
+
+# ----> Hashing de contraseñas en TypeORM <----
+1. instalamos bcript
+2. instalamos los tipos `npmi i @types/bcrypt`
+3. importamos en el servicio => en el endpoind que guarda el password le aplicamos el hashing => `const hasPassword = await bcypt.has(user.password, 10)` => asignamos al password antes de salvar
+4. Excluimos el dato de los valores retornados => hay dos formas => Pasandole los valores  que queremos retornar en un select dentro de las condiciones del servicio
+ ```sh 
+ const user = await this.userRepo.findOne({
+      where: { id },
+      select: ['id', 'email', 'password', 'role'],
+    });
+```
+ó excluyendo el dato en la entity `@Exclude()` (en mejor forma)
+
+# ------> Autenticación con Passport.js <------
+
+https://docs.nestjs.com/security/authentication  <!--TODO Hacer la demo de la doc -->
+
+1. Instalamos passport ` npm install --save @nestjs/passport passport passport-local`
+2. Instalamos los tipos `npm install --save-dev @types/passport-local`
+3. Creamos un servicio de autenticacion => `nest g s auth/services/auth --flat`,
+4. Importamos el servicio a que recibe la data a validar (en este caso el UserService) tanto en el servicio que acabamos de crear, en el provider se importa el `UserModule` (recordar que si no está en el provider no funciona)
+5. Creamos el método de validación en el auth.service => en el metodo => traemos el usuario por el emai => desencriptamos y validamos el password => retornamos si es valido o no
+```sh
+  async validateUser(email: string, password: string) {
+    const user = await this.userService.findByEmail(email);
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (user && isMatch) {
+      return user;
+    }
+    return null;
+  }
+```
+6. Creamos la estrategia => `nest g s auth/strategies/local.strategy --flat` => importamos PassprotStrategy => extendemos nuestra estrategia del anterior => le decimo cual es nuestra estrategia; para eso importamos la Strategy de passport-local y se la pasamos al PassportStrategy. => Inyectamos el AuthService en el constructor => llamamos al super => cramos el método que valide el usuario => retornamos el resultado
+```sh 
+ @Injectable()
+  export class LocalStrategyService extends PassportStrategy(Strategy, 'local') {
+    constructor(private authService: AuthService) {
+      super();
+    }
+
+    async validate(email: string, password: string) {
+      const user = await this.authService.validateUser(email, password);
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      return user;
+    }
+ 
+```
+ `Por defecto el primer parametro se llama username, no importa si lo llamamos email aquí, cuando hagamos la petición tiene que ser con username (mas adelante lo customizamos)`
+7. Importar en el provider (auth.module) PassportModule
+
+8. Crear la ruta para provar la validación => creamos el controller `nest g co auth/controllers/auth --flat` => creamos el metodo que recibe los datos => usamos los guards para validar con la estrategia 
+
+```sh
+@Controller('auth')
+export class AuthController {
+  
+  @UseGuards(AuthGuard('local'))
+  @Post()
+  login(@Req() req: Request) {
+    return req.user;
+  }
+}
+```
+9. Cambiando el nombre de los atributos => en el supr de la clase que llama al validate renombramos las variables que vienen pro defecto
+```sh
+ export class LocalStrategyService extends PassportStrategy(Strategy, 'local') {
+    constructor(private authService: AuthService) {
+      super({
+        usernameField: 'email', // por defecto es 'username'
+        passwordField : 'password'
+      });
+    }
+   ...
+```
+# -----> Conectando Passport con JWT <---------
+https://docs.nestjs.com/security/authentication#jwt-token  <!--TODO Hacer la demo de la doc -->
+1. inatalamos Jwt `npm install --save @nestjs/jwt passport-jwt` 
+ `npm install --save-dev @types/passport-jwt`
+2. En el auth servicie hacer que cuando se hace login genere un token
+ 2.1 => inyectamos JwtService => metodo para generar el token
+
+ ```sh
+  generateJwt(user: User) {
+    const payload = { role: user.role, sub: user.password }; > sub es el atributo particular
+    return {
+      access_token: this.jwtService.sign(payload), > sing es la firma
+      user,
+    };
+  }
+ ```
+ 3. Como buena practica tipmos el payload => creamos una carpeta models => creamos el dto del pau¡yload
