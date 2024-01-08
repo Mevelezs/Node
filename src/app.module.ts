@@ -10,10 +10,10 @@ import { enviroments } from '../enviroments/enviroments';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
+import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +25,7 @@ import { AuthModule } from './auth/auth.module';
       validationSchema: Joi.object({
         API_KEY: Joi.string().optional(),
         POSTGRES_USER: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
         POSTGRES_PASSWORD: Joi.string().required(),
         POSTGRES_DB: Joi.string().required(),
         POSTGRES_PORT: Joi.number().required(),

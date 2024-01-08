@@ -46,6 +46,7 @@ export class UsersService {
       const customer = await this.customerService.findOne(data.customerId);
       newUser.customer = customer;
     }
+    console.log(newUser);
     return this.userRepo.save(newUser);
   }
 

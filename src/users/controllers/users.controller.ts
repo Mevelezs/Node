@@ -30,12 +30,6 @@ export class UsersController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'List all users' })
-  findone(email: string) {
-    return this.usersService.findByEmail(email);
-  }
-
-  @Post()
   create(@Body() payload: CreateUserDto) {
     return this.usersService.create(payload);
   }

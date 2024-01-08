@@ -574,4 +574,69 @@ https://docs.nestjs.com/security/authentication#jwt-token  <!--TODO Hacer la dem
     };
   }
  ```
- 3. Como buena practica tipmos el payload => creamos una carpeta models => creamos el dto del pau¡yload
+ 3. Como buena practica tipamos el payload => creamos una carpeta models => creamos el dto del payload
+ 4. Importamos el JwtModule al authModule => lo configuramos para recibir el secreto
+  ```sh
+    imports: [
+    JwtModule.register({
+      secret: ' El secreto',
+      signOptions: {
+        expiresIn: '10d',  
+      },
+    }),
+    ]
+   ```
+5. lo usamos en el método que trae el usuario validado (si pasó lea signa el token) en AuthController
+
+# --------->Implementando JWT Guard <----------
+1. Vamos a hacer un strategy que verifique en los demás endpoints si el token es valido o no para permitir el acceso interceptandolos con un guardian
+
+```sh
+ @Injectable()
+  export class JwtStrategyService extends PassportStrategy(Strategy, 'jwt') {
+    constructor(
+      @Inject(config.KEY) private configService: ConfigType<typeof config>, // así se inyecta directamente con variables de entorno
+    ) {
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // tipo de tokrn
+        ignoreExpiration: false, // si está expirado no pasa
+        secretOrKey: configService.jtwKey, // el secreto para desencriptar
+      });
+    }
+
+    validate(payload: PayloadToken) {
+      // expone el role y el sub para usar
+      return payload;
+    }
+  }
+
+```
+2. Creamos el guardian para recibir los heders o usar la estrategia anterior directamente sobre las rutas con @UseGuards `@UseGuards(AuthGuard('jwt'))` => si se coloca encima del cotrolador, cubre todas las rutas => aplicado en products
+
+3. Guardian para que no oculte todas las rutas de un controlador.
+ 3.1 creamos el guardian `nest g gu auth/guards/jwt-auth --flat `
+ 3.2 quitamon la implemntación que trae por defecto y extendemos de nuestro guardian `AuthGuard('jwt')`
+ 3.3 Importamos reflector para leer la metadata => lo inyectamos al constructor
+ 3.4 Implementamos el canActivate y le pasamos la data que tre el decorador customizado isPublic ( este lo hicimos) => usado Producs y reemplazando el anterior.
+
+---------------------------------------------------------------------- TODO
+Para obtener el token de los heders // NO PROBADO
+  constructor(
+    @Inject(config.KEY)
+    privatereadonly configService: ConfigType<typeof config>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromHeader('token'), // 🗨️ Donde dice [token] puedes poner el nombre del header que quieres obtener
+      ignoreExpiration: false,
+      secretOrKey: configService.jwt.secret,
+    });
+  }
+---------------------------------------------------------------------------- 
+
+# -------> Control de roles en NestJS <--------
+1. Definimos los roles en un documento aparte => auth/models
+2. Creamos un decorador para los roles
+3. Dentro del decorador importamos el modelo de roles para tiparlos y se los pasamos como parametros 
+4. Creamos un guardian para que recoja la metadata 
+5. Pasamos el guardian, Roles y Role al controlador, se pueden pasar más de un guardian...
+6. Aplicamos el decorador @Roles(Role.ADMIN) por ejemplo encima de los endpoints que se quieren solo para el admin
