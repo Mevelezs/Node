@@ -26,7 +26,7 @@ export class AuthService {
   generateJwt(user: User) {
     const payload: PayloadToken = { role: user.role, sub: user.password };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload), // genera ek token
       user,
     };
   }

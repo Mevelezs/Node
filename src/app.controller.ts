@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, SetMetadata, UseGuards } from '@nestjs/common';
 
 import { AppService } from './app.service';
 import { Public } from './auth/decorators/public.decorator';
@@ -20,6 +20,7 @@ export class AppController {
     return this.appService.getApiData();
   }
 
+  @SetMetadata('isPublic', true) // forma manual => luego lo metemos a los decoradores que armamos
   @Get('/variables')
   getVariables() {
     return this.appService.getVariables();
